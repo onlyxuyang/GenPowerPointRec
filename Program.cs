@@ -64,8 +64,21 @@ namespace GenPowerPointRec
                         {
                             for (int i = 1; i < record.Count; i++)
                             {
-                                //https://www.cnblogs.com/lv8218218/archive/2010/12/20/1911746.html
-                                colors[i - 1] = System.Drawing.Color.FromName(record[i].Value);
+                                if(((string)record[i].Value).StartsWith("#"))
+                                {
+                                    int rgb = (int)(int.Parse(((string)record[i].Value).Remove(0,1), System.Globalization.NumberStyles.HexNumber) + 0xFF000000);
+                                    colors[i - 1] = System.Drawing.Color.FromArgb(rgb);
+                                }
+                                else if(((string)record[i].Value).Contains(","))
+                                {
+                                    var rgb = ((string)record[i].Value).Split(',');
+                                    colors[i - 1] = System.Drawing.Color.FromArgb(int.Parse(rgb[0]), int.Parse(rgb[1]), int.Parse(rgb[2]));
+                                }
+                                else
+                                {
+                                    //https://www.cnblogs.com/lv8218218/archive/2010/12/20/1911746.html
+                                    colors[i - 1] = System.Drawing.Color.FromName(record[i].Value);
+                                }
                             }
                             continue;
                         }
@@ -85,15 +98,15 @@ namespace GenPowerPointRec
                             weights[i-2] = float.Parse(record[i].Value);
                             string group = record[0].Value;
                             string type = csv.HeaderRecord[i];
-                            if(!groupWeights.ContainsKey(type))
+                            if(!groupWeights.ContainsKey(group))
                             {
-                                groupWeights[type] = new Dictionary<string, float>();
+                                groupWeights[group] = new Dictionary<string, float>();
                             }
-                            if(!groupWeights[type].ContainsKey(group))
+                            if(!groupWeights[group].ContainsKey(type))
                             {
-                                groupWeights[type][group] = 0;
+                                groupWeights[group][type] = 0;
                             }
-                            groupWeights[type][group] += weights[i - 2];
+                            groupWeights[group][type] += weights[i - 2];
                         }
 
                         DrawRec(ref slide, record[1].Value, currentx, currenty, width, height, weights, colors);
@@ -135,27 +148,41 @@ namespace GenPowerPointRec
 
         static void outputSummary(ref ISlide slide, Dictionary<string, Dictionary<string, float>> groupWeights)
         {
-            string summary = "";
-            foreach(var type in groupWeights)
-            {
-                foreach(var group in type.Value)
-                {
-                    summary += "(" + group.Key + ") " + type.Key + ":" + group.Value+"\n";
-                }
-            }
-            float width = 200;
-            float height = 20;
-            float startx = slide.Presentation.SlideSize.Size.Width - width - 20;
+            int rowNum = groupWeights.Values.First().Count + 1;
+            int colNum = groupWeights.Count + 1; 
+            double cellWidth = 80.0;
+            double cellHeight = 20.0;
+            double[] widths = Enumerable.Repeat(cellWidth, colNum).ToArray();
+            double[] heights = Enumerable.Repeat(cellHeight, rowNum).ToArray();
+            widths[0] = 160.0;
+            double tableWidth = cellWidth * colNum;
+            float startx = slide.Presentation.SlideSize.Size.Width - (float)tableWidth - 20;
             float starty = 300;
 
-            IAutoShape totalShape = slide.Shapes.AppendShape(ShapeType.Rectangle, new RectangleF(startx, starty, width, height));
-            totalShape.Fill.FillType = FillFormatType.None;
-            totalShape.TextFrame.AutofitType = TextAutofitType.Shape;
-            totalShape.Line.FillType = FillFormatType.None;
-            totalShape.TextFrame.Text = summary;
-            TextRange textRange = totalShape.TextFrame.TextRange;
-            textRange.Fill.FillType = Spire.Presentation.Drawing.FillFormatType.Solid;
-            textRange.Fill.SolidColor.Color = Color.Black;
+            ITable table = slide.Shapes.AppendTable(startx, starty, widths, heights);
+            table.StylePreset = TableStylePreset.MediumStyle3Accent1;
+
+            table[0, 0].TextFrame.Text = "";
+
+            int colIdx = 0;
+            int rowIdx = 0;
+            foreach(var group in groupWeights)
+            {
+                colIdx++;
+                table[colIdx, rowIdx].TextFrame.Text = group.Key;
+            }
+            colIdx = 0;
+            foreach (var group in groupWeights)
+            {
+                colIdx++;
+                rowIdx = 0;
+                foreach (var type in group.Value)
+                {
+                    rowIdx++;
+                    table[0, rowIdx].TextFrame.Text = type.Key;
+                    table[colIdx, rowIdx].TextFrame.Text = type.Value.ToString();
+                }
+            }
         }
         static void DrawSamples(ref ISlide slide, string[] header, Color[] colors)
         {
