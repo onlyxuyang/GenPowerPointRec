@@ -21,7 +21,8 @@ namespace GenPowerPointRec
             Presentation ppt = new Presentation();
             ppt.SlideSize.Type = SlideSizeType.Screen16x9;
 
-            using (var reader = new StreamReader(filepath))
+            FileStream fs = new FileStream(filepath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            using (var reader = new StreamReader(fs))
             {
                 using (var csv = new CsvReader(reader, CultureInfo.InvariantCulture))
                 {
