@@ -69,6 +69,16 @@ namespace GenPowerPointRec
                             }
                             continue;
                         }
+                        if (((string)record[0].Value).ToLower() == "size")
+                        {
+                            width = int.Parse(record[1].Value);
+                            height = int.Parse(record[2].Value);
+                            gapx = int.Parse(record[3].Value);
+                            gapy = int.Parse(record[4].Value);
+                            linecount = int.Parse(record[5].Value);
+                            continue;
+                        }
+
                         float[] weights = new float[count];
                         for(int i=1;i<record.Count;i++)
                         {
