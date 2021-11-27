@@ -52,6 +52,9 @@ namespace GenPowerPointRec
                         var record = Enumerable.ToList(csv.GetRecord<dynamic>());
                         if(record[0].Value == "")
                         {
+                            if (currentLineCount == 0)
+                                continue;
+
                             currentx = startx;
                             currenty += height + gapy;
                             currentLineCount = 0;
