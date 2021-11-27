@@ -45,7 +45,7 @@ namespace GenPowerPointRec
 
                     Color[] colors = new Color[count];
                     ISlide slide = ppt.Slides[currentSlideIdx];
-                    float[] totalWeights = new float[count];
+                    Dictionary<string, Dictionary<string, float>> groupWeights = new Dictionary<string, Dictionary<string, float>>();
                     while (csv.Read())
                     {
                         slide = ppt.Slides[currentSlideIdx];
@@ -80,12 +80,23 @@ namespace GenPowerPointRec
                         }
 
                         float[] weights = new float[count];
-                        for(int i=1;i<record.Count;i++)
+                        for(int i=2;i<record.Count;i++)
                         {
-                            weights[i-1] = float.Parse(record[i].Value);
-                            totalWeights[i - 1] += weights[i - 1];
+                            weights[i-2] = float.Parse(record[i].Value);
+                            string group = record[0].Value;
+                            string type = csv.HeaderRecord[i];
+                            if(!groupWeights.ContainsKey(type))
+                            {
+                                groupWeights[type] = new Dictionary<string, float>();
+                            }
+                            if(!groupWeights[type].ContainsKey(group))
+                            {
+                                groupWeights[type][group] = 0;
+                            }
+                            groupWeights[type][group] += weights[i - 2];
                         }
-                        DrawRec(ref slide, record[0].Value, currentx, currenty, width, height, weights, colors);
+
+                        DrawRec(ref slide, record[1].Value, currentx, currenty, width, height, weights, colors);
                         currentLineCount += 1;
                         if(currentLineCount >= linecount)
                         {
@@ -99,8 +110,8 @@ namespace GenPowerPointRec
                         }
                     }
 
-                    DrawSamples(ref slide, csv.HeaderRecord.Skip(1).Take(csv.HeaderRecord.Length - 1).ToArray(), colors);
-                    outputSummary(ref slide, csv.HeaderRecord.Skip(1).Take(csv.HeaderRecord.Length - 1).ToArray(), totalWeights);
+                    DrawSamples(ref slide, csv.HeaderRecord.Skip(2).Take(csv.HeaderRecord.Length - 2).ToArray(), colors);
+                    outputSummary(ref slide, groupWeights);
                 }
             }
 
@@ -122,12 +133,15 @@ namespace GenPowerPointRec
             return colors;
         }
 
-        static void outputSummary(ref ISlide slide, string[] header, float[] weights)
+        static void outputSummary(ref ISlide slide, Dictionary<string, Dictionary<string, float>> groupWeights)
         {
             string summary = "";
-            for (int idx = 0; idx < header.Length; idx++)
+            foreach(var type in groupWeights)
             {
-                summary += header[idx] + ":" + weights[idx].ToString()+"\n";
+                foreach(var group in type.Value)
+                {
+                    summary += "(" + group.Key + ") " + type.Key + ":" + group.Value+"\n";
+                }
             }
             float width = 200;
             float height = 20;
