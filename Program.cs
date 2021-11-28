@@ -183,7 +183,7 @@ namespace GenPowerPointRec
                 {
                     rowIdx++;
                     table[0, rowIdx].TextFrame.Text = type.Key;
-                    table[colIdx, rowIdx].TextFrame.Text = type.Value.ToString("N1");
+                    table[colIdx, rowIdx].TextFrame.Text = type.Value.ToString("0.##");
                 }
             }
         }
@@ -231,7 +231,7 @@ namespace GenPowerPointRec
                     commentShape.Line.FillType = FillFormatType.None;
                     commentShape.TextFrame.AutofitType = TextAutofitType.Normal;
                     commentShape.TextFrame.WordWrap = false;
-                    commentShape.TextFrame.Text = weights[idx].ToString("N1");
+                    commentShape.TextFrame.Text = weights[idx].ToString();
                     TextRange textRange = commentShape.TextFrame.TextRange;
                     textRange.Fill.FillType = Spire.Presentation.Drawing.FillFormatType.Solid;
                     textRange.Fill.SolidColor.Color = Color.Black;
