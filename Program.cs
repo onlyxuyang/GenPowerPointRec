@@ -33,6 +33,7 @@ namespace GenPowerPointRec
                     float gapx = 5;
                     float gapy = 5;
                     int linecount = 5;
+                    bool showComment = false;
 
                     float currentx = startx;
                     float currenty = starty;
@@ -89,6 +90,8 @@ namespace GenPowerPointRec
                             gapx = int.Parse(record[3].Value);
                             gapy = int.Parse(record[4].Value);
                             linecount = int.Parse(record[5].Value);
+                            if (record.Count >= 7)
+                                bool.TryParse(record[6].Value, out showComment);
                             continue;
                         }
 
@@ -109,7 +112,7 @@ namespace GenPowerPointRec
                             groupWeights[group][type] += weights[i - 2];
                         }
 
-                        DrawRec(ref slide, record[1].Value, currentx, currenty, width, height, weights, colors);
+                        DrawRec(ref slide, record[1].Value, currentx, currenty, width, height, weights, colors, showComment);
                         currentLineCount += 1;
                         if(currentLineCount >= linecount)
                         {
@@ -180,7 +183,7 @@ namespace GenPowerPointRec
                 {
                     rowIdx++;
                     table[0, rowIdx].TextFrame.Text = type.Key;
-                    table[colIdx, rowIdx].TextFrame.Text = type.Value.ToString();
+                    table[colIdx, rowIdx].TextFrame.Text = type.Value.ToString("N1");
                 }
             }
         }
@@ -201,14 +204,16 @@ namespace GenPowerPointRec
                 shape.Line.FillType = FillFormatType.None;
                 shape.TextFrame.AutofitType = TextAutofitType.Normal;
                 shape.TextFrame.Text = header[idx];
+                shape.ZOrderPosition = 0;
                 currenty += height + gapy;
             }
         }
-        static void DrawRec(ref ISlide slide, string title, float x, float y, float width, float height, float[] weights, Color[] colors)
+        static void DrawRec(ref ISlide slide, string title, float x, float y, float width, float height, float[] weights, Color[] colors, bool comment=false)
         {
             float weightSum = 0;
             foreach (var weight in weights)
                 weightSum += weight;
+            float commentWidth = 3;
             float currentX = x;
             for(int idx = 0; idx<weights.Length; idx++)
             {
@@ -219,6 +224,18 @@ namespace GenPowerPointRec
                 shape.Fill.FillType = FillFormatType.Solid;
                 shape.Fill.SolidColor.Color = colors[idx];
                 shape.Line.FillType = FillFormatType.None;
+                if(comment)
+                {
+                    IAutoShape commentShape = slide.Shapes.AppendShape(ShapeType.Rectangle, new RectangleF(currentX, y + height - commentWidth, recWidth, commentWidth));
+                    commentShape.Fill.FillType = FillFormatType.None;
+                    commentShape.Line.FillType = FillFormatType.None;
+                    commentShape.TextFrame.AutofitType = TextAutofitType.Normal;
+                    commentShape.TextFrame.WordWrap = false;
+                    commentShape.TextFrame.Text = weights[idx].ToString("N1");
+                    TextRange textRange = commentShape.TextFrame.TextRange;
+                    textRange.Fill.FillType = Spire.Presentation.Drawing.FillFormatType.Solid;
+                    textRange.Fill.SolidColor.Color = Color.Black;
+                }
                 currentX += recWidth;
             }
             IAutoShape titleShape = slide.Shapes.AppendShape(ShapeType.Rectangle, new RectangleF(x, y, width, height));
